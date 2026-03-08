@@ -576,6 +576,36 @@ apt update
 apt install -y python3 python3-pip
 ```
 
+### Python 3.11+ PEP 668 오류 해결
+
+Python 3.11 이후 Debian/Ubuntu에서는 PEP 668 정책으로 인해 시스템 Python에 pip로 직접 설치하는 것이 막혀 있습니다.
+
+오류 메시지:
+
+```
+error: externally-managed-environment
+```
+
+**해결 방법:**
+
+`pip install` 명령에 `--break-system-packages` 옵션 추가:
+
+```bash
+pip3 install youtube-transcript-api --break-system-packages
+```
+
+또는
+
+```bash
+python3 -m pip install <패키지명> --break-system-packages
+```
+
+```bash
+pip install <패키지명> --break-system-packages
+```
+
+Docker 컨테이너에서는 일반적으로 이 방법을 사용해도 안전합니다.
+
 ---
 
 원하시면 제가 다음 답변에서 이걸 바탕으로 **최종 동작본 3개 파일만 깔끔하게 다시 정리해서** 바로 복붙 가능하게 드리겠습니다.
