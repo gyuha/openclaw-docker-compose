@@ -226,6 +226,135 @@ docker compose run --rm openclaw-cli agents bind --agent main --bind discord:def
 
 ---
 
+# 7-1. 여러 텔레그램 채널 설정하기
+
+하나의 OpenClaw 인스턴스에서 **여러 개의 텔레그램 봇**을 운영할 수 있습니다. 각 봇은 독자적인 botToken과 계정 설정을 가지며, 특정 에이전트에 연결됩니다.
+
+## 구조 요약
+
+여러 텔레그램 채널을 구성하려면 세 가지 섹션이 필요합니다:
+
+1. **`agents.list`** - 각 봇에 연결될 에이전트
+2. **`channels.telegram.accounts`** - 각 텔레그램 봇 계정 (botToken, allowFrom 등)
+3. **`bindings`** - 에이전트와 텔레그램 계정 연결
+
+## 전체 예시 (`openclaw.json`)
+
+```json
+{
+  "agents": {
+    "list": [
+      {
+        "id": "main",
+        "default": true,
+        "workspace": "~/.openclaw/workspace"
+      },
+      {
+        "id": "news",
+        "workspace": "~/.openclaw/agents/news"
+      }
+    ]
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "accounts": {
+        "default": {
+          "dmPolicy": "pairing",
+          "botToken": "TOKEN_1",
+          "allowFrom": [8254472361],
+          "groupPolicy": "allowlist",
+          "streaming": "partial"
+        },
+        "news": {
+          "dmPolicy": "pairing",
+          "botToken": "TOKEN_2",
+          "allowFrom": [8254472361],
+          "groupPolicy": "allowlist",
+          "streaming": "partial"
+        }
+      }
+    }
+  },
+  "bindings": [
+    {
+      "agentId": "main",
+      "match": {
+        "channel": "telegram",
+        "accountId": "default"
+      }
+    },
+    {
+      "agentId": "news",
+      "match": {
+        "channel": "telegram",
+        "accountId": "news"
+      }
+    }
+  ]
+}
+```
+
+## 설정 설명
+
+| 섹션 | 설명 |
+|------|------|
+| `agents.list` | 각 봇이 사용할 에이전트 (`main`, `news`) |
+| `channels.telegram.accounts.default` | 첫 번째 텔레그램 봇 (TOKEN_1) |
+| `channels.telegram.accounts.news` | 두 번째 텔레그램 봇 (TOKEN_2) |
+| `bindings` | `main` → `default` 봇, `news` → `news` 봇 연결 |
+
+## 텔레그램 BotToken 얻기
+
+1. [@BotFather](https://t.me/BotFather) 대화 시작
+2. `/newbot` 명령으로 새 봇 생성
+3. 생성된 봇의 토큰 복사
+4. 필요한 만큼 봇 생성 (각각 다른 토큰)
+
+## 설정 순서
+
+```bash
+# 1. 에이전트 추가
+docker compose run --rm openclaw-cli agents add news --workspace ~/.openclaw/agents/news
+
+# 2. workspace 생성
+mkdir -p ~/.openclaw/agents/news
+
+# 3. openclaw.json 편집 (위 예시 참고)
+nano ~/.openclaw/openclaw.json
+
+# 4. gateway 재시작
+docker compose restart openclaw-gateway
+```
+
+## 더 많은 채널 추가하기
+
+세 번째, 네 번째 텔레그램 채널을 추가하려면:
+
+```json
+{
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "accounts": {
+        "default": { "botToken": "TOKEN_1", ... },
+        "news": { "botToken": "TOKEN_2", ... },
+        "alerts": { "botToken": "TOKEN_3", ... },
+        "support": { "botToken": "TOKEN_4", ... }
+      }
+    }
+  },
+  "bindings": [
+    { "agentId": "main", "match": { "channel": "telegram", "accountId": "default" } },
+    { "agentId": "news", "match": { "channel": "telegram", "accountId": "news" } },
+    { "agentId": "alerts", "match": { "channel": "telegram", "accountId": "alerts" } },
+    { "agentId": "support", "match": { "channel": "telegram", "accountId": "support" } }
+  ]
+}
+```
+
+---
+
 # 8. 가장 추천하는 실제 추가 순서
 
 당장 가장 무난한 방법은 이 순서입니다.
