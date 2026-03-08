@@ -344,6 +344,24 @@ docker compose run --rm openclaw-cli gateway probe
 
 즉, `docker compose up -d` 했는데 `cli`가 계속 떠 있지 않아도 이상한 것이 아닙니다.
 
+## 10-1. 대화형 설정 (configure 명령)
+
+처음 설정하거나 설정을 수정할 때는 대화형 설정 도구를 사용할 수도 있습니다.
+
+```bash
+cd ~/openclaw-docker
+docker compose run --rm openclaw-cli configure
+```
+
+이 명령을 실행하면 대화형 메뉴가 나오고, 다음을 포함한 다양한 설정을 수정할 수 있습니다.
+
+* Gateway 설정 (bind, port 등)
+* 인증 설정 (token 등)
+* Control UI 설정
+* Agent 설정
+
+대화형 설정을 통해 `openclaw.json` 파일을 자동으로 수정할 수 있어 편리합니다.
+
 ---
 
 # 10. Dashboard에서 `pairing required` 발생
@@ -532,6 +550,33 @@ docker compose run --rm openclaw-cli devices approve <requestId>
 ```text
 http://127.0.0.1:18789/
 ```
+
+## 관리자 계정으로 접근
+
+컨테이너 내에서 root 권한으로 작업해야 할 경우:
+
+```bash
+docker compose exec -u root openclaw-gateway bash
+```
+
+이 명령을 사용하면 Gateway 컨테이너 내에서 root 사용자로 bash 쉘에 접속할 수 있습니다.
+
+## Python 설치
+
+컨테이너 내에서 Python 설치가 필요할 경우:
+
+```bash
+docker compose exec -u root openclaw-gateway bash -c "apt update && apt install -y python3 python3-pip"
+```
+
+또는 컨테이너 접속 후 직접 실행:
+
+```bash
+apt update
+apt install -y python3 python3-pip
+```
+
+---
 
 원하시면 제가 다음 답변에서 이걸 바탕으로 **최종 동작본 3개 파일만 깔끔하게 다시 정리해서** 바로 복붙 가능하게 드리겠습니다.
 
