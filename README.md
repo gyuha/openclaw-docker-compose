@@ -86,7 +86,7 @@ services:
 중요한 점:
 
 * `gateway`는 계속 실행되는 서비스
-* `cli`는 보통 **상시 실행용이 아니라 필요할 때 `docker compose run --rm openclaw-cli ...` 형태로 실행**
+* `cli`는 보통 **상시 실행용이 아니라 필요할 때 `task cli -- ARGS="..."` 또는 관련 `task` 명령으로 실행**
 
 ---
 
@@ -208,16 +208,31 @@ OPENCLAW_GATEWAY_TOKEN
 
 # 6. 처음 실행
 
+이 저장소는 `Taskfile.yml`을 포함하고 있으므로 기본 운영 명령은 `docker compose` 직접 호출보다 `task` 사용을 기준으로 보면 됩니다.
+
+먼저 사용 가능한 작업 목록을 확인:
+
 ```bash
-cd ~/openclaw-docker
-docker compose up -d
+task --list
 ```
 
-확인:
+Gateway 시작:
 
 ```bash
-docker compose ps
-docker compose logs --tail=100 openclaw-gateway
+task up
+```
+
+상태와 로그 확인:
+
+```bash
+task ps
+task logs
+```
+
+필요하면 로그 길이를 늘려서 볼 수 있습니다.
+
+```bash
+task logs -- TAIL=300
 ```
 
 ---
@@ -327,30 +342,31 @@ http://localhost:18789/
 
 # 9. CLI 사용 방법
 
-`cli` 컨테이너는 보통 계속 떠 있는 서비스가 아니라, 필요할 때 명령 실행용으로 사용합니다.
+`openclaw-cli` 컨테이너는 상시 실행 서비스가 아니라, 필요할 때 `task`로 일회성 명령을 실행하는 용도입니다.
 
-예:
+자주 쓰는 명령:
 
 ```bash
-cd ~/openclaw-docker
-docker compose run --rm openclaw-cli devices list
+task devices:list
+task probe
+task configure
 ```
 
-다른 예:
+임의의 CLI 명령을 직접 넘기고 싶다면:
 
 ```bash
-docker compose run --rm openclaw-cli gateway probe
+task cli -- ARGS="devices list"
+task cli -- ARGS="gateway probe"
 ```
 
-즉, `docker compose up -d` 했는데 `cli`가 계속 떠 있지 않아도 이상한 것이 아닙니다.
+즉, `task up` 이후에도 `openclaw-cli` 컨테이너가 계속 떠 있지 않아도 정상입니다.
 
-## 10-1. 대화형 설정 (configure 명령)
+## 10-1. 대화형 설정 (`configure`)
 
-처음 설정하거나 설정을 수정할 때는 대화형 설정 도구를 사용할 수도 있습니다.
+처음 설정하거나 설정을 수정할 때는 대화형 설정 도구를 사용할 수 있습니다.
 
 ```bash
-cd ~/openclaw-docker
-docker compose run --rm openclaw-cli configure
+task configure
 ```
 
 이 명령을 실행하면 대화형 메뉴가 나오고, 다음을 포함한 다양한 설정을 수정할 수 있습니다.
@@ -386,8 +402,7 @@ pairing required
 ## 11-1. 현재 대기 중인 pairing 요청 확인
 
 ```bash
-cd ~/openclaw-docker
-docker compose run --rm openclaw-cli devices list
+task devices:list
 ```
 
 여기서 pending 상태의 요청이 보입니다.
@@ -407,17 +422,23 @@ docker compose run --rm openclaw-cli devices list
 예를 들어 `requestId`가 `abc123`이라면:
 
 ```bash
-docker compose run --rm openclaw-cli devices approve abc123
+task devices:approve -- REQUEST_ID=abc123
 ```
 
 이렇게 승인합니다.
+
+가장 최근 pending 요청을 바로 승인하고 다시 확인하려면:
+
+```bash
+task devices:approve:final
+```
 
 ---
 
 ## 11-3. 다시 확인
 
 ```bash
-docker compose run --rm openclaw-cli devices list
+task devices:list
 ```
 
 pending이 사라졌는지 확인합니다.
@@ -475,8 +496,7 @@ mkdir -p ~/.openclaw/workspace
 실행
 
 ```bash
-cd ~/openclaw-docker
-docker compose up -d --force-recreate
+task up
 ```
 
 ## 6단계
@@ -492,7 +512,7 @@ http://127.0.0.1:18789/
 CLI 테스트
 
 ```bash
-docker compose run --rm openclaw-cli devices list
+task devices:list
 ```
 
 ## 8단계
@@ -500,7 +520,7 @@ docker compose run --rm openclaw-cli devices list
 `pairing required`가 뜨면 pending 요청 확인
 
 ```bash
-docker compose run --rm openclaw-cli devices list
+task devices:list
 ```
 
 ## 9단계
@@ -508,7 +528,7 @@ docker compose run --rm openclaw-cli devices list
 요청 승인
 
 ```bash
-docker compose run --rm openclaw-cli devices approve <requestId>
+task devices:approve -- REQUEST_ID=<requestId>
 ```
 
 ## 10단계
@@ -519,30 +539,81 @@ docker compose run --rm openclaw-cli devices approve <requestId>
 
 # 13. 마지막에 바로 써먹는 명령만 따로 정리
 
+이 섹션은 `Taskfile.yml` 기준의 실제 명령만 정리한 것입니다.
+
+## 작업 목록 보기
+
+```bash
+task --list
+```
+
+## 시작
+
+```bash
+task up
+```
+
+## 중지
+
+```bash
+task down
+```
+
 ## 재시작
 
 ```bash
-cd ~/openclaw-docker
-docker compose down
-docker compose up -d --force-recreate
+task restart
+```
+
+## 업데이트
+
+```bash
+task pull
+task update
+```
+
+`task pull`은 이미지만 내려받고, `task update`는 최신 이미지를 받은 뒤 컨테이너를 다시 생성합니다.
+
+## 상태 확인
+
+```bash
+task ps
 ```
 
 ## 로그 확인
 
 ```bash
-docker compose logs --tail=100 openclaw-gateway
+task logs
 ```
 
 ## 디바이스/세션 확인
 
 ```bash
-docker compose run --rm openclaw-cli devices list
+task devices:list
 ```
 
 ## 디바이스/세션 승인
 
 ```bash
-docker compose run --rm openclaw-cli devices approve <requestId>
+task devices:approve -- REQUEST_ID=<requestId>
+```
+
+## 최신 pending 요청 승인 후 재확인
+
+```bash
+task devices:approve:final
+```
+
+## Gateway probe
+
+```bash
+task probe
+```
+
+## 임의 CLI 명령 실행
+
+```bash
+task cli -- ARGS="devices list"
 ```
 
 ## Dashboard 접속
@@ -556,10 +627,16 @@ http://127.0.0.1:18789/
 컨테이너 내에서 root 권한으로 작업해야 할 경우:
 
 ```bash
-docker compose exec -u root openclaw-gateway bash
+task shell
 ```
 
-이 명령을 사용하면 Gateway 컨테이너 내에서 root 사용자로 bash 쉘에 접속할 수 있습니다.
+root 권한 쉘이 필요하면:
+
+```bash
+task root-shell
+```
+
+이 명령을 사용하면 Gateway 컨테이너 내에서 bash 쉘에 접속할 수 있습니다.
 
 ## Python 설치
 
@@ -605,8 +682,3 @@ pip install <패키지명> --break-system-packages
 ```
 
 Docker 컨테이너에서는 일반적으로 이 방법을 사용해도 안전합니다.
-
----
-
-원하시면 제가 다음 답변에서 이걸 바탕으로 **최종 동작본 3개 파일만 깔끔하게 다시 정리해서** 바로 복붙 가능하게 드리겠습니다.
-
