@@ -1,0 +1,101 @@
+version: '3'
+
+silent: true
+dotenv:
+  - .env
+
+vars:
+  COMPOSE: docker compose
+  GATEWAY_SERVICE: openclaw-gateway
+  CLI_SERVICE: openclaw-cli
+  LOG_TAIL: '{{default "100" .TAIL}}'
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  up:
+    desc: Start OpenClaw gateway in background
+    cmds:
+      - '{{.COMPOSE}} up -d'
+
+  down:
+    desc: Stop OpenClaw containers
+    cmds:
+      - '{{.COMPOSE}} down'
+
+  restart:
+    desc: Recreate and restart OpenClaw containers
+    cmds:
+      - '{{.COMPOSE}} down'
+      - '{{.COMPOSE}} up -d --force-recreate'
+
+  ps:
+    desc: Show OpenClaw container status
+    cmds:
+      - '{{.COMPOSE}} ps'
+
+  logs:
+    desc: Show gateway logs
+    cmds:
+      - '{{.COMPOSE}} logs --tail={{.LOG_TAIL}} {{.GATEWAY_SERVICE}}'
+
+  pull:
+    desc: Pull the latest OpenClaw image
+    cmds:
+      - '{{.COMPOSE}} pull'
+
+  update:
+    desc: Update OpenClaw to the latest image and recreate containers
+    cmds:
+      - '{{.COMPOSE}} pull'
+      - '{{.COMPOSE}} up -d --force-recreate'
+
+  cli:
+    desc: Run an arbitrary OpenClaw CLI command (task cli -- ARGS="devices list")
+    requires:
+      vars:
+        - ARGS
+    cmds:
+      - '{{.COMPOSE}} run --rm {{.CLI_SERVICE}} {{.ARGS}}'
+
+  configure:
+    desc: Run the interactive OpenClaw configure command
+    cmds:
+      - '{{.COMPOSE}} run --rm {{.CLI_SERVICE}} configure'
+
+  probe:
+    desc: Probe the gateway from the CLI container
+    cmds:
+      - '{{.COMPOSE}} run --rm {{.CLI_SERVICE}} gateway probe'
+
+  devices:list:
+    desc: List pending and approved devices/sessions
+    cmds:
+      - '{{.COMPOSE}} run --rm {{.CLI_SERVICE}} devices list'
+
+  devices:approve:
+    desc: Approve a pending device/session (task devices:approve -- REQUEST_ID=abc123)
+    requires:
+      vars:
+        - REQUEST_ID
+    cmds:
+      - '{{.COMPOSE}} run --rm {{.CLI_SERVICE}} devices approve {{.REQUEST_ID}}'
+
+  devices:approve:final:
+    desc: Approve the latest pending device/session and recheck status
+    cmds:
+      - '{{.COMPOSE}} run --rm {{.CLI_SERVICE}} devices approve --latest'
+      - '{{.COMPOSE}} run --rm {{.CLI_SERVICE}} devices list'
+
+  shell:
+    desc: Open a shell in the gateway container
+    cmds:
+      - '{{.COMPOSE}} exec {{.GATEWAY_SERVICE}} bash'
+
+  root-shell:
+    desc: Open a root shell in the gateway container
+    cmds:
+      - '{{.COMPOSE}} exec -u root {{.GATEWAY_SERVICE}} bash'
